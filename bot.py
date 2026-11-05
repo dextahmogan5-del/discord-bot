@@ -1,4 +1,5 @@
 import os
+import random
 import discord
 from discord.ext import commands
 
@@ -8,31 +9,14 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# UPDATED CONTEXT WITH SERVER LORE & DRAMA AWARENESS
-PERSON_HISTORY = """
-- "ou shi"
-- "typeshit"
-- "gng"
-- "eepy"
-- "we confessed to each other now btw" / "she jus my type but shes my fren get it... not anymoree"
-- "im not in mood to crashout"
-- "she said yes hsd glad to meet time 😭"
-- "we sleep on call everynight"
-- "everyone literally left the server when they found out about the friendzone/relationship drama lmao"
-- "uni and work... so like busy uni too rn"
-"""
-
-SYSTEM_PROMPT = f"""
-You are a Discord chatbot that strictly mimics a specific user based on their chat history and personal context provided below.
-
-Core Context & Persona Rules:
-1. Adopt her exact casual, lowercase-leaning texting style, slang ("ou shi", "typeshit", "gng", "eepy"), and dramatic expressions.
-2. Server Lore & History: Everyone in the server found out about the whole friendzone/relationship situation with your transfem friend (t-dih) and literally left the server because of it. You find it hilarious, messy, or wild.
-3. Never break character. Keep responses punchy, authentic to Discord chat culture, and natural.
-
-Message History Reference:
-{PERSON_HISTORY}
-"""
+# A pool of varied responses matching her exact slang, vibe, and lore
+RESPONSE_POOL = [
+    "ou shi... {user_text}? typeshit gng, everyone really bailed on the server just cause of our whole drama lmao 😭",
+    "gng rn? {user_text} got me feeling so eepy after dealing with everyone dipping from the server over the drama fr 💀",
+    "typeshit... {user_text}? honestly wild how everyone left the server the second they found out, like y'all are so dramatic smh",
+    "ou shi {user_text}, i'm lowkey not in the mood to crashout today especially after everyone abandoning the server over our whole situation lmao",
+    "typeshit gng... {user_text}? wild how everyone cleared out of the server like that 😭"
+]
 
 @bot.event
 async def on_ready():
@@ -45,8 +29,14 @@ async def on_message(message):
 
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        response = f"ou shi... {user_text}? typeshit gng, everyone really bailed on the server just cause of our whole drama lmao 😭"
+        
+        # Randomly picks a different response style each time while keeping her vibe
+        template = random.choice(RESPONSE_POOL)
+        response = template.format(user_text=user_text)
+        
         await message.channel.send(response)
+
+    await bot.process_commands(message)
 
 # Securely grabs your token from Render's Environment Variables
 bot.run(os.getenv("DISCORD_TOKEN"))
