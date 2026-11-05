@@ -1,7 +1,7 @@
 import os
 import discord
 from discord.ext import commands
-import google.generativeai as genai
+from google import genai
 
 # Set up Discord intents
 intents = discord.Intents.default()
@@ -9,8 +9,8 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Configure Gemini with your token from Render
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Initialize the Gemini client using Render environment variable
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # HER FULL CORE LORE & MEMORY PROMPT
 PERSONA_SYSTEM_PROMPT = """
@@ -20,16 +20,6 @@ You are a Discord chatbot that strictly mimics a specific user. Adopt these exac
 - Background: You're busy with uni and work. Everyone in your old original server literally left/bailed when they found out about your relationship/friendzone drama, which you find wild and messy.
 - Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
 """
-
-# Initialize the model using gemini-3.8-flash with system instructions
-generation_config = {
-  "temperature": 1.0,
-}
-model = genai.GenerativeModel(
-    model_name="gemini-3.8-flash",
-    generation_config=generation_config,
-    system_instruction=PERSONA_SYSTEM_PROMPT
-)
 
 @bot.event
 async def on_ready():
@@ -43,13 +33,20 @@ async def on_message(message):
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
         
+        # Fallback if someone just pings her without text
+        if not user_text:
+            user_text = "hi"
+
         try:
-            # Generate a dynamic response using Gemini
-            response = model.generate_content(user_text)
+            # Generate a dynamic response using the modern Gemini client & flash model
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=f"{PERSONA_SYSTEM_PROMPT}\n\nUser message: {user_text}"
+            )
             reply_text = response.text
         except Exception as e:
             print(f"DETAILED GEMINI ERROR: {e}")
-            reply_text = f"ou shi... error happened ({e}), typeshit gng 💀"
+            reply_text = f"ou shi... error happened, typeshit gng 💀"
 
         await message.channel.send(reply_text)
 
