@@ -33,15 +33,17 @@ async def on_message(message):
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
         
-        # Fallback if someone just pings her without text
+        # Ensure text is never empty
         if not user_text:
             user_text = "hi"
 
         try:
-            # Generate a dynamic response using the modern Gemini client & flash model
+            # Combine system prompt and user text safely using gemini-1.5-flash
+            full_prompt = f"{PERSONA_SYSTEM_PROMPT}\n\nUser message: {user_text}"
+            
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=f"{PERSONA_SYSTEM_PROMPT}\n\nUser message: {user_text}"
+                model="gemini-1.5-flash",
+                contents=full_prompt
             )
             reply_text = response.text
         except Exception as e:
