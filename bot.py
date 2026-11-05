@@ -11,6 +11,9 @@ class SimpleHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"Bot is alive!")
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
 
 def run_server():
     port = int(os.getenv("PORT", 10000))
@@ -67,8 +70,9 @@ async def on_message(message):
             )
             reply_text = chat_completion.choices[0].message.content
         except Exception as e:
-            print(f"EXACT GROQ ERROR: {e}")
-            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
+            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
+            print(f"CRITICAL GROQ FAIL: {repr(e)}")
+            reply_text = f"err: {str(e)[:50]}"
 
         if not reply_text or not reply_text.strip():
             reply_text = "typeshit gng 💀"
