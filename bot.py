@@ -28,7 +28,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Point OpenAI client to GitHub Models endpoint using your GITHUB_TOKEN
+# Explicitly mapping GitHub's Azure-backed endpoint
 client = OpenAI(
     base_url="https://models.inference.ai.azure.com",
     api_key=os.getenv("GITHUB_TOKEN"),
@@ -73,13 +73,14 @@ async def on_message(message):
                 max_tokens=40
             )
             reply_text = response.choices[0].message.content
-            print(f"GitHub Models Success! Response: {reply_text}")
+            print(f"GitHub Models Success: {reply_text}")
         except Exception as e:
             import traceback
-            print("--- GITHUB MODELS EXCEPTION TRACEBACK ---")
+            print("--- FULL ERROR TRACEBACK ---")
             traceback.print_exc()
-            print("------------------------------------------")
-            reply_text = "typeshit gng 💀"
+            print("----------------------------")
+            # This will now print the actual error to your logs instead of hiding it behind slang
+            reply_text = f"err: {str(e)[:45]}"
 
         if not reply_text or not reply_text.strip():
             reply_text = "typeshit gng 💀"
