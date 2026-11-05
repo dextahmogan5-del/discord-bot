@@ -62,7 +62,7 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using a verified active free model on OpenRouter
+            # Using the verified active free model ID on OpenRouter
             completion = client.chat.completions.create(
                 model="nvidia/nemotron-3.5-lightning:free",
                 messages=[
