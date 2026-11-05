@@ -60,7 +60,7 @@ async def on_message(message):
 
         try:
             chat_completion = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
@@ -70,7 +70,6 @@ async def on_message(message):
             )
             reply_text = chat_completion.choices[0].message.content
         except Exception as e:
-            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
             print(f"CRITICAL GROQ FAIL: {repr(e)}")
             reply_text = f"err: {str(e)[:50]}"
 
