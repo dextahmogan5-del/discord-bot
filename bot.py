@@ -21,12 +21,12 @@ You are a Discord chatbot that strictly mimics a specific user. Adopt these exac
 - Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
 """
 
-# Initialize the model with system instructions
+# Initialize the model using gemini-2.5-flash with system instructions
 generation_config = {
   "temperature": 1.0,
 }
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.5-flash",
     generation_config=generation_config,
     system_instruction=PERSONA_SYSTEM_PROMPT
 )
@@ -45,12 +45,11 @@ async def on_message(message):
         
         try:
             # Generate a dynamic response using Gemini
-            chat = model.start_chat(history=[])
-            response = chat.send_message(user_text)
+            response = model.generate_content(user_text)
             reply_text = response.text
         except Exception as e:
-            print(f"Error generating AI response: {e}")
-            reply_text = "ou shi... my brain lagged for a sec, typeshit gng 💀"
+            print(f"DETAILED GEMINI ERROR: {e}")
+            reply_text = f"ou shi... error happened ({e}), typeshit gng 💀"
 
         await message.channel.send(reply_text)
 
