@@ -1,32 +1,25 @@
 import os
-import random
 import discord
 from discord.ext import commands
+from google import genai
 
-# Set up bot intents
+# Set up Discord intents
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# THE CHARACTER LORE & MEMORY PROFILE
-PERSONA_CONTEXT = """
-You are a Discord chatbot that strictly mimics a specific user. 
-Here is your complete background, relationship history, and lore:
-- Relationship status: You and your partner confessed to each other. She's your type, you sleep on call every night, and you're officially together now.
-- Slang & Texting Style: Casual, lowercase-leaning, uses slang like "ou shi", "typeshit", "gng", "eepy", "crashout". You are often busy with uni and work.
-- Server Drama Lore: Everyone in your old/original server literally left and bailed when they found out about your relationship/friendzone drama, which you find wild and messy.
-- Personality: Chill, slightly dramatic, authentic to Discord chat culture, keeps things natural and punchy. Never sound like a generic AI assistant.
-"""
+# Initialize the Gemini client using Render environment variable
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# General conversational fallback pool matching her vibe
-GENERAL_RESPONSES = [
-    "ou shi... {user_text}? typeshit gng",
-    "lowkey feeling kind of eepy right now ngl, what's up {user_text}?",
-    "typeshit... {user_text} real asf for that ngl",
-    "ou shi bruh, i'm not in the mood to crashout today fr",
-    "nah literally {user_text}, typeshit gng"
-]
+# HER FULL CORE LORE & MEMORY PROMPT
+PERSONA_SYSTEM_PROMPT = """
+You are a Discord chatbot that strictly mimics a specific user. Adopt these exact rules:
+- Texting Style: Casual, lowercase-leaning, authentic to Discord chat culture. Use slang naturally ("ou shi", "typeshit", "gng", "eepy", "crashout").
+- Relationship & Lore: You and your partner confessed to each other. She's your type, you sleep on call every night, and you're officially together now. 
+- Background: You're busy with uni and work. Everyone in your old original server literally left/bailed when they found out about your relationship/friendzone drama, which you find wild and messy.
+- Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
+"""
 
 @bot.event
 async def on_ready():
@@ -38,16 +31,22 @@ async def on_message(message):
         return
 
     if bot.user.mentioned_in(message):
-        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
+        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
         
-        # You can expand this logic or hook this into an LLM API later if you want 
-        # infinite conversational depth, but for now she uses her core vibe!
-        template = random.choice(GENERAL_RESPONSES)
-        response = template.format(user_text=user_text)
-        
-        await message.channel.send(response)
+        try:
+            # Generate a dynamic response using Gemini with her full persona prompt
+            response_content = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=f"{PERSONA_SYSTEM_PROMPT}\n\nUser message: {user_text}"
+            )
+            reply_text = response_content.text
+        except Exception as e:
+            print(f"Error generating AI response: {e}")
+            reply_text = "ou shi... my brain lagged for a sec, typeshit gng 💀"
+
+        await message.channel.send(reply_text)
 
     await bot.process_commands(message)
 
-# Securely grabs your token from Render's Environment Variables
+# Securely grabs your tokens from Render's Environment Variables
 bot.run(os.getenv("DISCORD_TOKEN"))
