@@ -47,9 +47,9 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Generate response via Groq's Llama 3 model
+            # Using Groq's active production model ID
             chat_completion = client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
@@ -59,7 +59,6 @@ async def on_message(message):
             )
             reply_text = chat_completion.choices[0].message.content
         except Exception as e:
-            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
             print(f"EXACT GROQ ERROR: {e}")
             reply_text = f"err: {e}"
 
