@@ -48,4 +48,5 @@ async def on_message(message):
         response = f"ou shi... {user_text}? typeshit gng, everyone really bailed on the server just cause of our whole drama lmao 😭"
         await message.channel.send(response)
 
-bot.run("MTU2NzgzNDAwMTQyNTgzNDA1NA.GOjAxp.gDCxQwHKFSMUiJpUSQ3bNkrH5Bb7-ZqQsUVois")
+# Securely grabs your token from Render's Environment Variables
+bot.run(os.getenv("DISCORD_TOKEN"))
