@@ -9,7 +9,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Initialize Groq client (uses your Groq API key from Render)
+# Initialize Groq client using your GROQ_API_KEY environment variable
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # HER FULL CORE LORE & MEMORY PROMPT
@@ -21,23 +21,33 @@ You are a Discord chatbot that strictly mimics a specific user. Adopt these exac
 - Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
 """
 
+# Track processed message IDs to prevent double replies
+processed_messages = set()
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}!")
 
 @bot.event
 async def on_message(message):
+    # Ignore messages from the bot itself
     if message.author == bot.user:
         return
 
+    # Prevent processing the same message twice if event triggers in duplicates
+    if message.id in processed_messages:
+        return
+
+    # Check if the bot was mentioned
     if bot.user.mentioned_in(message):
-        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
+        processed_messages.add(message.id)
         
+        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
         if not user_text:
             user_text = "hi"
 
         try:
-            # Generate response using Groq's lightning-fast Llama 3 model
+            # Generate response via Groq's Llama 3 model
             chat_completion = client.chat.completions.create(
                 model="llama3-8b-8192",
                 messages=[
@@ -49,11 +59,13 @@ async def on_message(message):
             )
             reply_text = chat_completion.choices[0].message.content
         except Exception as e:
-            print(f"DETAILED GROQ ERROR: {e}")
-            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
+            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
+            print(f"EXACT GROQ ERROR: {e}")
+            reply_text = f"err: {e}"
 
         await message.channel.send(reply_text)
 
     await bot.process_commands(message)
 
+# Securely grabs your bot token from Render's Environment Variables
 bot.run(os.getenv("DISCORD_TOKEN"))
