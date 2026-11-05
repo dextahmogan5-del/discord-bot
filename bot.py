@@ -28,7 +28,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Initialize OpenAI client pointing to OpenRouter's endpoint
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -63,9 +62,9 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using OpenRouter's auto-free router so it never hits dead model names
+            # Using an explicitly free model tag on OpenRouter
             completion = client.chat.completions.create(
-                model="openrouter/free",
+                model="cognitivecomputations/dolphin-mixtral-8x7b:free",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
@@ -75,11 +74,12 @@ async def on_message(message):
             )
             reply_text = completion.choices[0].message.content
         except Exception as e:
+            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
             print(f"OPENROUTER ERROR: {repr(e)}")
-            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
+            reply_text = f"err: {str(e)[:45]}"
 
         if not reply_text or not reply_text.strip():
-            reply_text = "typeshit gng 💀"
+            reply_text = "err: empty"
 
         await message.channel.send(reply_text)
 
