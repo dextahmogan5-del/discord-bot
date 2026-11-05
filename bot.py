@@ -62,9 +62,9 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using an explicitly free model tag on OpenRouter
+            # Using a verified active free model on OpenRouter
             completion = client.chat.completions.create(
-                model="cognitivecomputations/dolphin-mixtral-8x7b:free",
+                model="nvidia/nemotron-3.5-lightning:free",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
@@ -74,12 +74,11 @@ async def on_message(message):
             )
             reply_text = completion.choices[0].message.content
         except Exception as e:
-            # THIS WILL PRINT THE EXACT ERROR IN YOUR RENDER LOGS
             print(f"OPENROUTER ERROR: {repr(e)}")
             reply_text = f"err: {str(e)[:45]}"
 
         if not reply_text or not reply_text.strip():
-            reply_text = "err: empty"
+            reply_text = "typeshit gng 💀"
 
         await message.channel.send(reply_text)
 
