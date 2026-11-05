@@ -60,7 +60,7 @@ async def on_message(message):
 
         try:
             chat_completion = client.chat.completions.create(
-                model="gpt-oss-20b",
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
