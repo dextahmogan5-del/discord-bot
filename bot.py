@@ -3,7 +3,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
-from openai import OpenAI
+from google import genai
 
 # 1. Dummy web server to satisfy Render's Free Web Service port requirement
 class SimpleHandler(BaseHTTPRequestHandler):
@@ -22,16 +22,14 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# 2. Discord & OpenRouter Setup
+# 2. Discord & Google GenAI Setup
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-)
+# Initialize the official Google GenAI client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 PERSONA_SYSTEM_PROMPT = """
 You are a Discord chatbot mimicking a specific user. Follow these strict rules:
@@ -62,20 +60,24 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using the verified active free model ID on OpenRouter
-            completion = client.chat.completions.create(
-                model="nvidia/nemotron-3.5-lightning:free",
-                messages=[
-                    {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
-                    {"role": "user", "content": user_text}
-                ],
-                temperature=0.9,
-                max_tokens=40
+            # Using Gemini's stable production flash model with proper config block
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=user_text,
+                config={
+                    "system_instruction": PERSONA_SYSTEM_PROMPT,
+                    "max_output_tokens": 50,
+                    "temperature": 0.9,
+                }
             )
-            reply_text = completion.choices[0].message.content
+            reply_text = response.text
+            print(f"Gemini Success! Response: {reply_text}")
         except Exception as e:
-            print(f"OPENROUTER ERROR: {repr(e)}")
-            reply_text = f"err: {str(e)[:45]}"
+            import traceback
+            print("--- GEMINI EXCEPTION TRACEBACK ---")
+            traceback.print_exc()
+            print("-----------------------------------")
+            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
 
         if not reply_text or not reply_text.strip():
             reply_text = "typeshit gng 💀"
