@@ -259,7 +259,6 @@ DEFAULT_RESPONSES = [
     "which uni?",
     "her",
     "and im waiting for him to call",
-    "And hungry",
     "And eepy",
     "Im kinda pissed",
     "Lets see",
@@ -318,19 +317,55 @@ DEFAULT_RESPONSES = [
     "Who are u gng"
 ]
 
-KEYWORD_RESPONSES = {
-    "hru": ["im kinda pissed", "And hungry", "And eepy", "lets see how it goes"],
-    "how are you": ["im kinda pissed", "And hungry", "And eepy"],
-    "sup": ["Wsp", "What up", "Yo", "typeshit gng 💀"],
-    "what's up": ["Wsp", "What up", "Yo"],
-    "hello": ["yo", "sup gng", "wassup", "hello", "hi"],
-    "hi": ["yo", "sup", "hey", "hello"],
-    "t dih": ["bro wtf 💀", "nah you're wild for that", "coy af rn", "tdih is off radar", "ALL HAIL TO T DIH"],
-    "sleep": ["nah sleeping on call rn", "eepy as hell", "We sleep on call everynigbt", "And eepy", "we talk and accidentally fall asleep"],
-    "exam": ["I GOT EXAMS COMING UP", "NO GNGY"],
-    "black": ["im half black", "im black", "ethnically"],
-    "uni": ["busy w uni too rn", "uni and work"],
-    "ai": ["Why are u an app", "Mike is an app", "oml why am i talking to an ai", "are u fr not ai"]
+# Smarter intent categories for contextual replies
+INTENT_RESPONSES = {
+    "how_are_you": [
+        "im kinda pissed", 
+        "And eepy", 
+        "lets see how it goes", 
+        "im not in mood to crashout"
+    ],
+    "greeting": [
+        "yo", 
+        "sup gng", 
+        "wassup", 
+        "Wsp", 
+        "What up", 
+        "Yo"
+    ],
+    "sleep": [
+        "nah sleeping on call rn", 
+        "eepy as hell", 
+        "We sleep on call everynigbt", 
+        "And eepy", 
+        "we talk and accidentally fall asleep"
+    ],
+    "exam": [
+        "I GOT EXAMS COMING UP", 
+        "NO GNGY"
+    ],
+    "black": [
+        "im half black", 
+        "im black", 
+        "ethnically"
+    ],
+    "uni": [
+        "busy w uni too rn", 
+        "uni and work"
+    ],
+    "ai": [
+        "Why are u an app", 
+        "Mike is an app", 
+        "oml why am i talking to an ai", 
+        "are u fr not ai"
+    ],
+    "t dih": [
+        "bro wtf 💀", 
+        "nah you're wild for that", 
+        "coy af rn", 
+        "tdih is off radar", 
+        "ALL HAIL TO T DIH"
+    ]
 }
 
 @bot.event
@@ -345,18 +380,444 @@ async def on_message(message):
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
         
-        # Check if any keyword matches the user's message contextually
         reply_text = None
-        for keyword, responses in KEYWORD_RESPONSES.items():
-            if keyword in user_text:
-                reply_text = random.choice(responses)
-                break
         
-        # Fallback to random general slang if no keyword matched
+        # Smart intent/keyword checks
+        if any(w in user_text for w in ["hru", "how are you", "how u", "sup u"]):
+            reply_text = random.choice(INTENT_RESPONSES["how_are_you"])
+        elif any(w in user_text for w in ["hi", "hello", "hey", "sup", "wassup"]):
+            reply_text = random.choice(INTENT_RESPONSES["greeting"])
+        elif any(w in user_text for w in ["sleep", "bed", "night", "call", "eepy"]):
+            reply_text = random.choice(INTENT_RESPONSES["sleep"])
+        elif any(w in user_text for w in ["exam", "test"]):
+            reply_text = random.choice(INTENT_RESPONSES["exam"])
+        elif any(w in user_text for w in ["black", "ethnically"]):
+            reply_text = random.choice(INTENT_RESPONSES["black"])
+        elif any(w in user_text for w in ["uni", "college", "study"]):
+            reply_text = random.choice(INTENT_RESPONSES["uni"])
+        elif any(w in user_text for w in ["ai", "bot", "app"]):
+            reply_text = random.choice(INTENT_RESPONSES["ai"])
+        elif any(w in user_text for w in ["t dih", "tdih", "dick"]):
+            reply_text = random.choice(INTENT_RESPONSES["t dih"])
+            
+        # Fallback to random default slang if nothing specific matches
         if not reply_text:
             reply_text = random.choice(DEFAULT_RESPONSES)
 
-        # Show typing indicator to make it look realistic
+        # Show typing indicator for realism
+        async with message.channel.typing():
+            await message.channel.send(reply_text)
+
+    await bot.process_commands(message)
+
+bot.run(os.getenv("DISCORD_TOKEN"))
+import os
+import random
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import discord
+from discord.ext import commands
+
+# 1. Dummy web server for Render
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is alive!")
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+
+def run_server():
+    port = int(os.getenv("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_server, daemon=True).start()
+
+# 2. Discord Setup
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Pure Python response configuration
+DEFAULT_RESPONSES = [
+    "typeshit gng 💀",
+    "ou shi fr",
+    "nah ur tweaking",
+    "eepy af rn ngl",
+    "typeshit",
+    "and im leaving this gc, glad to meet yall",
+    "its not funny anymore",
+    "@everyone",
+    "okay well yall need to stop mentioning about my situation to everyone",
+    "No?",
+    "Nope outta question",
+    "that we love eachother",
+    "Its okay",
+    "😭😭😭",
+    "Ongg",
+    "Jill is better",
+    "lets see how it goes",
+    "Fuh her",
+    "im too nice for her it seems",
+    "yes intertwined but not in a relationship",
+    "Super powers",
+    "Ou shi",
+    "Nah",
+    "i couldn't update before",
+    "we confessed to each other now btw",
+    "Obv",
+    "For him",
+    "Ull be missed",
+    "Noooo",
+    "tdih is off radar",
+    "Or the tdih",
+    "me?",
+    "did u get a life or what",
+    "HELL YEAHH",
+    "that's so nice of u",
+    "AGAIN 😭😭😭",
+    "can yall stop",
+    "Dik",
+    "I will now",
+    "no thats not how it works",
+    "Hi kid",
+    "Yo",
+    "Thanks",
+    "fuh no i hate divyas",
+    "what did i do",
+    "Okay",
+    "what are we talkin about",
+    "hi im evil",
+    "thank uuu",
+    "thats sweet",
+    "ou shi",
+    "why",
+    "Suree",
+    "cse aiml",
+    "Variance and stuff",
+    "Yeah i have that",
+    "Good",
+    "😊",
+    "i dont remember most of the part",
+    "Erm yes",
+    "Probability and stats",
+    "yes",
+    "What up",
+    "I GOT EXAMS COMING UP",
+    "NO GNGY",
+    "Wsp",
+    "Thanks ig 😡",
+    "calm downn",
+    "okay cAlm downn",
+    "We jus watching netflix and chilling",
+    "idk about others",
+    "as pansexual yes",
+    "Yeah..",
+    "Yes thank u",
+    "Shut up",
+    "Shush dont pray on that now",
+    "Thanksss",
+    "Yippie",
+    ":P",
+    "all mine",
+    "i own it yeah",
+    "awww",
+    "and what is it",
+    "are u guys going for sih?",
+    "busy w uni too rn",
+    "ofc",
+    "sure",
+    "will mi u all",
+    "that sounds sad",
+    "wow",
+    "yeeee",
+    "mom",
+    "im half black",
+    "thats what i siad",
+    "black",
+    "ethnically",
+    "i am",
+    "i have",
+    "is toris problem not mine then",
+    "huh",
+    "i get the pass",
+    "it was fun while it taste",
+    "its okat",
+    "lol",
+    "cause i wont be a topic anymore",
+    "refreshed",
+    "i told u right",
+    "im w her rn",
+    "nga no",
+    "wdym",
+    "dont forget me guys",
+    "ouu she",
+    "fuh yeah",
+    "LMAOAKOAKOAKD",
+    "IDK HOW",
+    "ITS LONG",
+    "YEAH",
+    "FUH YEAH",
+    "is it good?",
+    "what",
+    "mhm?",
+    "to focus on us",
+    "i took a break",
+    "LMFAO",
+    "HI",
+    "i dont have one",
+    "Go on",
+    "nahh",
+    "What then",
+    "No gngy 😭",
+    "what? V max?",
+    "i love gays",
+    "Love not lust shut up",
+    "Vagina 💔",
+    "We talk and accidentally fall asleep",
+    "im not sure if its my tdih or freddys tdih 💖",
+    "she is not gonna get a v 💀",
+    "Calm down omg",
+    "WHAT TF ARE U SAYING NGA 😭",
+    "lg",
+    "5 m",
+    "We sleep on call everynigbt",
+    "GIRL WE ARE IRL",
+    "Yes ma'am",
+    "hehe",
+    "she said yest shes glad to meet time 😭",
+    "I DO",
+    "omg u too 😭",
+    "well hey @evil tori",
+    "don't",
+    "Soon",
+    "okay Man u guys will be the first one to know when i get cracked",
+    "We simply in halt rn",
+    "hey i didnt get friend zoned",
+    "Typeshit",
+    "wow Freddy",
+    "Its my friends",
+    "connections",
+    "Pussy",
+    "That's what I thought",
+    "Valid",
+    "2nd",
+    "she hasnt transitioned totally",
+    "But u will one day",
+    "Its tuff",
+    "Yes",
+    "uni",
+    "WHAT",
+    "cause im busy",
+    "she knows it want it",
+    "soon",
+    "and had a good laugh",
+    "We played roblox lol",
+    "nothing much",
+    "Talked to my babe todqy",
+    "im not in mood to crashout",
+    "okie",
+    "okieee",
+    "Heyyy stopp",
+    "i did",
+    "I'm not",
+    "Its okay ill like that t heart too",
+    "Who are u really",
+    "Oh lmao",
+    "Why are u an app",
+    "ill get my time",
+    "ldm",
+    "its okay she a ho, she agrees",
+    "are u fr not ai",
+    "Mike is an app",
+    "Shhhhh",
+    "oml why am i talking to an ai",
+    "i dont wanna say hehe",
+    "Yess",
+    "Mike dont make me think about that",
+    "i will",
+    "LMAO soon ill get that",
+    "Normal means how it used to be",
+    "and thats why i mi tgirl more now",
+    "And like back to normal yk",
+    "I never confess",
+    "NO",
+    "MIKE DONT SAY THAT, I NEVER PROPOSED",
+    "Maybe",
+    "Even if they don't start",
+    "And btw u talk to people",
+    "Im talking to u",
+    "i realised shes my type btw",
+    "shes jus my type but shes my fren get it",
+    "so like",
+    "shes already my fren",
+    "not anymoree",
+    "hello",
+    "thanks",
+    "change it when i'm back yeah",
+    "Hes a manwhore",
+    "Too",
+    "That",
+    "Yup",
+    "Huhh",
+    "What",
+    "Its not",
+    "I felt uncomfy i said it",
+    "So",
+    "jobless?",
+    "Its disturbing",
+    "I dont like the servers dp btw",
+    "which uni?",
+    "her",
+    "and im waiting for him to call",
+    "And eepy",
+    "Im kinda pissed",
+    "Lets see",
+    "i might",
+    "okay seasee",
+    "ig its okay",
+    "i believe actions speaks louder than words",
+    "Everytime",
+    "thats what she does",
+    "Nope",
+    "Sybau",
+    "ohh shi",
+    "Resend",
+    "Nooooo",
+    "Rn at 7.30",
+    "At 12",
+    "Ill be in dreams",
+    "Do any one of u",
+    "Fun police",
+    "Okay shh",
+    "or maybe not well known",
+    "I thought its new",
+    "Thats an MEME PG",
+    "Lmao",
+    "why do u have a 20k acc",
+    "holy fuck",
+    "do i get to nuh or nah",
+    "okay holon",
+    "shame",
+    "Is everyone a djck haver here?",
+    "send",
+    "Overruled",
+    "u",
+    "please",
+    "all of u are my twinks",
+    "twink",
+    "I could say",
+    "mmmm",
+    "Hes like a twink rn",
+    "Its not a crush",
+    "Ive never told him cause hes like really cocky",
+    "The way he is rn",
+    "my transfem friend is actually kinda my",
+    "Play",
+    "foul",
+    "Oh no me too",
+    "what bawl is that",
+    "fuwwyphone 💔",
+    "I GOT AN EUNORMOUS DIH",
+    "OOOOO HELL YEHA",
+    "i will whne i get the time",
+    "In big 16",
+    "Imagine using userphone",
+    "ewww",
+    "Cut that damn call",
+    "Who are u gng"
+]
+
+# Smarter intent categories for contextual replies
+INTENT_RESPONSES = {
+    "how_are_you": [
+        "im kinda pissed", 
+        "And eepy", 
+        "lets see how it goes", 
+        "im not in mood to crashout"
+    ],
+    "greeting": [
+        "yo", 
+        "sup gng", 
+        "wassup", 
+        "Wsp", 
+        "What up", 
+        "Yo"
+    ],
+    "sleep": [
+        "nah sleeping on call rn", 
+        "eepy as hell", 
+        "We sleep on call everynigbt", 
+        "And eepy", 
+        "we talk and accidentally fall asleep"
+    ],
+    "exam": [
+        "I GOT EXAMS COMING UP", 
+        "NO GNGY"
+    ],
+    "black": [
+        "im half black", 
+        "im black", 
+        "ethnically"
+    ],
+    "uni": [
+        "busy w uni too rn", 
+        "uni and work"
+    ],
+    "ai": [
+        "Why are u an app", 
+        "Mike is an app", 
+        "oml why am i talking to an ai", 
+        "are u fr not ai"
+    ],
+    "t dih": [
+        "bro wtf 💀", 
+        "nah you're wild for that", 
+        "coy af rn", 
+        "tdih is off radar", 
+        "ALL HAIL TO T DIH"
+    ]
+}
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}!")
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    if bot.user.mentioned_in(message):
+        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
+        
+        reply_text = None
+        
+        # Smart intent/keyword checks
+        if any(w in user_text for w in ["hru", "how are you", "how u", "sup u"]):
+            reply_text = random.choice(INTENT_RESPONSES["how_are_you"])
+        elif any(w in user_text for w in ["hi", "hello", "hey", "sup", "wassup"]):
+            reply_text = random.choice(INTENT_RESPONSES["greeting"])
+        elif any(w in user_text for w in ["sleep", "bed", "night", "call", "eepy"]):
+            reply_text = random.choice(INTENT_RESPONSES["sleep"])
+        elif any(w in user_text for w in ["exam", "test"]):
+            reply_text = random.choice(INTENT_RESPONSES["exam"])
+        elif any(w in user_text for w in ["black", "ethnically"]):
+            reply_text = random.choice(INTENT_RESPONSES["black"])
+        elif any(w in user_text for w in ["uni", "college", "study"]):
+            reply_text = random.choice(INTENT_RESPONSES["uni"])
+        elif any(w in user_text for w in ["ai", "bot", "app"]):
+            reply_text = random.choice(INTENT_RESPONSES["ai"])
+        elif any(w in user_text for w in ["t dih", "tdih", "dick"]):
+            reply_text = random.choice(INTENT_RESPONSES["t dih"])
+            
+        # Fallback to random default slang if nothing specific matches
+        if not reply_text:
+            reply_text = random.choice(DEFAULT_RESPONSES)
+
+        # Show typing indicator for realism
         async with message.channel.typing():
             await message.channel.send(reply_text)
 
