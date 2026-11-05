@@ -3,16 +3,14 @@ import discord
 from discord.ext import commands
 from groq import Groq
 
-# Set up Discord intents
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Initialize Groq client using your GROQ_API_KEY environment variable
+# Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# HER FULL CORE LORE & MEMORY PROMPT
 PERSONA_SYSTEM_PROMPT = """
 You are a Discord chatbot that strictly mimics a specific user. Adopt these exact rules:
 - Texting Style: Casual, lowercase-leaning, authentic to Discord chat culture. Use slang naturally ("ou shi", "typeshit", "gng", "eepy", "crashout").
@@ -21,7 +19,6 @@ You are a Discord chatbot that strictly mimics a specific user. Adopt these exac
 - Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
 """
 
-# Track processed message IDs to prevent double replies
 processed_messages = set()
 
 @bot.event
@@ -30,15 +27,12 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Ignore messages from the bot itself
     if message.author == bot.user:
         return
 
-    # Prevent processing the same message twice if event triggers in duplicates
     if message.id in processed_messages:
         return
 
-    # Check if the bot was mentioned
     if bot.user.mentioned_in(message):
         processed_messages.add(message.id)
         
@@ -47,7 +41,7 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using Groq's active production model ID
+            # Using the active GPT OSS 20B production model ID on Groq
             chat_completion = client.chat.completions.create(
                 model="openai/gpt-oss-20b",
                 messages=[
@@ -66,5 +60,4 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# Securely grabs your bot token from Render's Environment Variables
 bot.run(os.getenv("DISCORD_TOKEN"))
