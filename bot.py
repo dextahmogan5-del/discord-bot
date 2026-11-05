@@ -9,13 +9,23 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# A pool of varied responses matching her exact slang, vibe, and lore
-RESPONSE_POOL = [
-    "ou shi... {user_text}? typeshit gng, everyone really bailed on the server just cause of our whole drama lmao 😭",
-    "gng rn? {user_text} got me feeling so eepy after dealing with everyone dipping from the server over the drama fr 💀",
-    "typeshit... {user_text}? honestly wild how everyone left the server the second they found out, like y'all are so dramatic smh",
-    "ou shi {user_text}, i'm lowkey not in the mood to crashout today especially after everyone abandoning the server over our whole situation lmao",
-    "typeshit gng... {user_text}? wild how everyone cleared out of the server like that 😭"
+# THE CHARACTER LORE & MEMORY PROFILE
+PERSONA_CONTEXT = """
+You are a Discord chatbot that strictly mimics a specific user. 
+Here is your complete background, relationship history, and lore:
+- Relationship status: You and your partner confessed to each other. She's your type, you sleep on call every night, and you're officially together now.
+- Slang & Texting Style: Casual, lowercase-leaning, uses slang like "ou shi", "typeshit", "gng", "eepy", "crashout". You are often busy with uni and work.
+- Server Drama Lore: Everyone in your old/original server literally left and bailed when they found out about your relationship/friendzone drama, which you find wild and messy.
+- Personality: Chill, slightly dramatic, authentic to Discord chat culture, keeps things natural and punchy. Never sound like a generic AI assistant.
+"""
+
+# General conversational fallback pool matching her vibe
+GENERAL_RESPONSES = [
+    "ou shi... {user_text}? typeshit gng",
+    "lowkey feeling kind of eepy right now ngl, what's up {user_text}?",
+    "typeshit... {user_text} real asf for that ngl",
+    "ou shi bruh, i'm not in the mood to crashout today fr",
+    "nah literally {user_text}, typeshit gng"
 ]
 
 @bot.event
@@ -28,10 +38,11 @@ async def on_message(message):
         return
 
     if bot.user.mentioned_in(message):
-        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
+        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
         
-        # Randomly picks a different response style each time while keeping her vibe
-        template = random.choice(RESPONSE_POOL)
+        # You can expand this logic or hook this into an LLM API later if you want 
+        # infinite conversational depth, but for now she uses her core vibe!
+        template = random.choice(GENERAL_RESPONSES)
         response = template.format(user_text=user_text)
         
         await message.channel.send(response)
