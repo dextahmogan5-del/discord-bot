@@ -27,7 +27,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Pure Python response configuration (Add or tweak your lines here)
+# Pure Python response configuration
 DEFAULT_RESPONSES = [
     "typeshit gng 💀",
     "ou shi fr",
@@ -321,6 +321,8 @@ DEFAULT_RESPONSES = [
 KEYWORD_RESPONSES = {
     "hru": ["im kinda pissed", "And hungry", "And eepy", "lets see how it goes"],
     "how are you": ["im kinda pissed", "And hungry", "And eepy"],
+    "sup": ["Wsp", "What up", "Yo", "typeshit gng 💀"],
+    "what's up": ["Wsp", "What up", "Yo"],
     "hello": ["yo", "sup gng", "wassup", "hello", "hi"],
     "hi": ["yo", "sup", "hey", "hello"],
     "t dih": ["bro wtf 💀", "nah you're wild for that", "coy af rn", "tdih is off radar", "ALL HAIL TO T DIH"],
@@ -343,7 +345,7 @@ async def on_message(message):
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
         
-        # Check if any keyword matches the user's message
+        # Check if any keyword matches the user's message contextually
         reply_text = None
         for keyword, responses in KEYWORD_RESPONSES.items():
             if keyword in user_text:
@@ -354,7 +356,9 @@ async def on_message(message):
         if not reply_text:
             reply_text = random.choice(DEFAULT_RESPONSES)
 
-        await message.channel.send(reply_text)
+        # Show typing indicator to make it look realistic
+        async with message.channel.typing():
+            await message.channel.send(reply_text)
 
     await bot.process_commands(message)
 
