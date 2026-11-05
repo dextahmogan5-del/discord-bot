@@ -3,7 +3,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
-from groq import Groq
+from openai import OpenAI
 
 # 1. Dummy web server to satisfy Render's Free Web Service port requirement
 class SimpleHandler(BaseHTTPRequestHandler):
@@ -20,15 +20,19 @@ def run_server():
     server = HTTPServer(("0.0.0.0", port), SimpleHandler)
     server.serve_forever()
 
-# Start the dummy server in the background thread
 threading.Thread(target=run_server, daemon=True).start()
 
-# 2. Discord & Groq Bot Setup
+# 2. Discord & OpenRouter Setup
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Initialize OpenAI client pointing to OpenRouter's endpoint
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
 
 PERSONA_SYSTEM_PROMPT = """
 You are a Discord chatbot mimicking a specific user. Follow these strict rules:
@@ -59,8 +63,9 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            chat_completion = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+            # Using OpenRouter's auto-free router so it never hits dead model names
+            completion = client.chat.completions.create(
+                model="openrouter/free",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
@@ -68,10 +73,10 @@ async def on_message(message):
                 temperature=0.9,
                 max_tokens=40
             )
-            reply_text = chat_completion.choices[0].message.content
+            reply_text = completion.choices[0].message.content
         except Exception as e:
-            print(f"CRITICAL GROQ FAIL: {repr(e)}")
-            reply_text = f"err: {str(e)[:50]}"
+            print(f"OPENROUTER ERROR: {repr(e)}")
+            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
 
         if not reply_text or not reply_text.strip():
             reply_text = "typeshit gng 💀"
