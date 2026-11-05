@@ -1,9 +1,11 @@
+import asyncio
 import os
+import random
+import re
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
-from openai import OpenAI
 
 # 1. Dummy web server to satisfy Render's Free Web Service port requirement
 class SimpleHandler(BaseHTTPRequestHandler):
@@ -22,26 +24,95 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# 2. Discord & GitHub Models Setup
+# 2. Discord Setup
 intents = discord.Intents.default()
 intents.message_content = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Explicitly mapping GitHub's Azure-backed endpoint
-client = OpenAI(
-    base_url="https://models.inference.ai.azure.com",
-    api_key=os.getenv("GITHUB_TOKEN"),
-)
+# Combined general response bank (your lines + extra variety)
+DEFAULT_RESPONSES = [
+    "typeshit gng 💀",
+    "ou shi fr",
+    "nah ur tweaking",
+    "eepy af rn ngl",
+    "im waiting for him to call",
+    "lets see how it goes",
+    "im kinda pissed",
+    "that sounds sad",
+    "okie thanks",
+    "typeshit",
+    "bro what are you on about",
+    "real",
+    "so true bestie",
+    "nah literally",
+    "who let bro cook",
+    "💀💀",
+    "smh",
+    "ong",
+    "fr fr",
+    "bro is baffling me",
+    "you're actually insane",
+    "wild statement",
+    "couldn't be me",
+    "nah chill",
+    "ain't no way",
+    "bro really said that 😭",
+]
 
-PERSONA_SYSTEM_PROMPT = """
-You are a Discord chatbot mimicking a specific user. Follow these strict rules:
-- Texting Style: Super short, casual, lowercase-leaning, punchy (1 sentence max usually). Use slang naturally ("ou shi", "typeshit", "gng", "fr", "eepy").
-- Persona & Lore: You and your partner are officially together, sleeping on call every night. When people get introduced to you by him, or when certain topics like t dih come up, play along with the banter—act like you normally wouldn't like it or act coy/messy about it, but keep it playful and short.
-- Constraints: Never break character, never act like a helpful assistant, and never output meta notes or explanations.
-"""
-
-processed_messages = set()
+# Combined keyword responses (your exact lines + extra options)
+KEYWORD_RESPONSES = {
+    "hello": ["yo", "sup gng", "wassup", ":p", "oh hey"],
+    "hi": ["yo", "sup", "hey", "yeeee"],
+    "t dih": [
+        "ALL HAIL TO T DIH 🙌", 
+        "HELL YEAHH", 
+        "im not sure if its my tdih or freddys tdih ❤️", 
+        "I GOT AN ENORMOUS DIH 🔥", 
+        "OOOOO HELL YEHA",
+        "bro wtf 💀",
+        "nah you're wild for bringing that up",
+        "coy af rn ngl",
+    ],
+    "tdih": [
+        "ALL HAIL TO T DIH 🙌", 
+        "HELL YEAHH", 
+        "im not sure if its my tdih or freddys tdih ❤️", 
+        "I GOT AN ENORMOUS DIH 🔥", 
+        "OOOOO HELL YEHA",
+        "bro wtf 💀",
+        "nah you're wild for bringing that up",
+        "coy af rn ngl",
+    ],
+    "t-dih": [
+        "ALL HAIL TO T DIH 🙌", 
+        "HELL YEAHH", 
+        "im not sure if its my tdih or freddys tdih ❤️", 
+        "I GOT AN ENORMOUS DIH 🔥", 
+        "OOOOO HELL YEHA",
+        "bro wtf 💀",
+        "nah you're wild for bringing that up",
+        "coy af rn ngl",
+    ],
+    "sleep": [
+        "nah sleeping on call rn", 
+        "eepy as hell", 
+        "we jus watching netflix and chilling",
+        "we literally stay on call every night wdym"
+    ],
+    "call": [
+        "im waiting for him to call", 
+        "sleeping on call rn",
+        "on call rn 🥱"
+    ],
+    "type": [
+        "she's jus my type but she's my fren get it", 
+        "typeshit 😭"
+    ],
+    "babe": [
+        "talked to my babe today", 
+        "im not in mood to crashout"
+    ],
+}
 
 @bot.event
 async def on_ready():
@@ -52,38 +123,26 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    if message.id in processed_messages:
-        return
-
     if bot.user.mentioned_in(message):
-        processed_messages.add(message.id)
+        raw_text = message.content.replace(f"<@{bot.user.id}>", "").strip().lower()
         
-        user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        if not user_text:
-            user_text = "hi"
+        # Strips spaces and hyphens so tdih, t-dih, and t dih are all recognized identically
+        normalized_text = re.sub(r'[\s\-]+', '', raw_text)
+        
+        reply_text = None
+        for keyword, responses in KEYWORD_RESPONSES.items():
+            norm_keyword = keyword.replace(" ", "").replace("-", "")
+            if norm_keyword in normalized_text or keyword in raw_text:
+                reply_text = random.choice(responses)
+                break
+        
+        # Fallback to random general line if no keyword triggered
+        if not reply_text:
+            reply_text = random.choice(DEFAULT_RESPONSES)
 
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
-                    {"role": "user", "content": user_text}
-                ],
-                temperature=0.9,
-                max_tokens=40
-            )
-            reply_text = response.choices[0].message.content
-            print(f"GitHub Models Success: {reply_text}")
-        except Exception as e:
-            import traceback
-            print("--- FULL ERROR TRACEBACK ---")
-            traceback.print_exc()
-            print("----------------------------")
-            # This will now print the actual error to your logs instead of hiding it behind slang
-            reply_text = f"err: {str(e)[:45]}"
-
-        if not reply_text or not reply_text.strip():
-            reply_text = "typeshit gng 💀"
+        # Simulates typing status and a natural delay (between 1.0 and 2.2 seconds)
+        async with message.channel.typing():
+            await asyncio.sleep(random.uniform(1.0, 2.2))
 
         await message.channel.send(reply_text)
 
