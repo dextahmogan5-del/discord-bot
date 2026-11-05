@@ -21,12 +21,12 @@ You are a Discord chatbot that strictly mimics a specific user. Adopt these exac
 - Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
 """
 
-# Initialize the model using gemini-2.5-flash with system instructions
+# Initialize the model using gemini-3.8-flash with system instructions
 generation_config = {
   "temperature": 1.0,
 }
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash",
+    model_name="gemini-3.8-flash",
     generation_config=generation_config,
     system_instruction=PERSONA_SYSTEM_PROMPT
 )
