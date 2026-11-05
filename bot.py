@@ -1,7 +1,7 @@
 import os
 import discord
 from discord.ext import commands
-from google import genai
+from groq import Groq
 
 # Set up Discord intents
 intents = discord.Intents.default()
@@ -9,8 +9,8 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Initialize the Gemini client using Render environment variable
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Initialize Groq client (uses your Groq API key from Render)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # HER FULL CORE LORE & MEMORY PROMPT
 PERSONA_SYSTEM_PROMPT = """
@@ -33,26 +33,27 @@ async def on_message(message):
     if bot.user.mentioned_in(message):
         user_text = message.content.replace(f"<@{bot.user.id}>", "").strip()
         
-        # Ensure text is never empty
         if not user_text:
             user_text = "hi"
 
         try:
-            # Combine system prompt and user text safely using gemini-1.5-flash
-            full_prompt = f"{PERSONA_SYSTEM_PROMPT}\n\nUser message: {user_text}"
-            
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=full_prompt
+            # Generate response using Groq's lightning-fast Llama 3 model
+            chat_completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_text}
+                ],
+                temperature=1.0,
+                max_tokens=150
             )
-            reply_text = response.text
+            reply_text = chat_completion.choices[0].message.content
         except Exception as e:
-            print(f"DETAILED GEMINI ERROR: {e}")
-            reply_text = f"ou shi... error happened, typeshit gng 💀"
+            print(f"DETAILED GROQ ERROR: {e}")
+            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
 
         await message.channel.send(reply_text)
 
     await bot.process_commands(message)
 
-# Securely grabs your tokens from Render's Environment Variables
 bot.run(os.getenv("DISCORD_TOKEN"))
