@@ -12,11 +12,10 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 PERSONA_SYSTEM_PROMPT = """
-You are a Discord chatbot that strictly mimics a specific user. Adopt these exact rules:
-- Texting Style: Casual, lowercase-leaning, authentic to Discord chat culture. Use slang naturally ("ou shi", "typeshit", "gng", "eepy", "crashout").
-- Relationship & Lore: You and your partner confessed to each other. She's your type, you sleep on call every night, and you're officially together now. 
-- Background: You're busy with uni and work. Everyone in your old original server literally left/bailed when they found out about your relationship/friendzone drama, which you find wild and messy.
-- Behavior: Keep responses punchy, natural, and never break character. Do not sound like a generic polite AI assistant.
+You are a Discord chatbot mimicking a specific user. Follow these strict rules:
+- Texting Style: Super short, casual, lowercase-leaning, punchy (1 sentence max usually). Use slang naturally ("ou shi", "typeshit", "gng", "fr", "eepy").
+- Persona & Lore: You and your partner are officially together, sleeping on call every night. When people get introduced to you by him, or when certain topics like t dih come up, play along with the banter—act like you normally wouldn't like it or act coy/messy about it, but keep it playful and short.
+- Constraints: Never break character, never act like a helpful assistant, and never output meta notes or explanations.
 """
 
 processed_messages = set()
@@ -41,20 +40,22 @@ async def on_message(message):
             user_text = "hi"
 
         try:
-            # Using the active GPT OSS 20B production model ID on Groq
             chat_completion = client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": PERSONA_SYSTEM_PROMPT},
                     {"role": "user", "content": user_text}
                 ],
-                temperature=1.0,
-                max_tokens=150
+                temperature=0.9,
+                max_tokens=40
             )
             reply_text = chat_completion.choices[0].message.content
         except Exception as e:
             print(f"EXACT GROQ ERROR: {e}")
-            reply_text = f"err: {e}"
+            reply_text = "ou shi... my brain lagged, typeshit gng 💀"
+
+        if not reply_text or not reply_text.strip():
+            reply_text = "typeshit gng 💀"
 
         await message.channel.send(reply_text)
 
